@@ -1,0 +1,492 @@
+<html>
+	<head>
+		<title>Bluebottle robot interface</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+		<style>
+			html {
+			  box-sizing: border-box;
+			}
+			*, *:before, *:after {
+			  box-sizing: inherit;
+			}
+			body { margin: 0; }
+
+			.frame { 
+			  display: flex;
+			  width: 100vw;
+			  height: 100vh;
+			}
+			.frame>* {
+			  flex: 1 1 50%;
+			}
+			#editor {
+			  font-family: monospace;
+			  padding: .0em;
+			  background: #444;
+			  color: white;
+			}
+			canvas { 
+			  width: 100%;
+			  height: 100%;
+			}
+
+
+
+
+			.mobile-container {
+			margin: auto;
+			background-color: #555;
+			height: 100%;
+			color: white;
+			}
+
+			.topnav {
+			overflow: hidden;
+			background-color: #333;
+			position: relative;
+			}
+
+			.topnav #myLinks {
+			display: none;
+			}
+
+			.topnav a {
+			color: white;
+			padding: 14px 16px;
+			text-decoration: none;
+			font-size: 17px;
+			display: block;
+			}
+
+			.topnav a.icon {
+			background: black;
+			display: block;
+			position: absolute;
+			right: 0;
+			top: 0;
+			}
+
+			.topnav a:hover {
+			background-color: #ddd;
+			color: black;
+			}
+
+			.active {
+			background-color: rgb(11, 5, 100);
+			color: white;
+			}
+
+
+
+		</style>
+
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+		<style>
+			.button {
+			  background-color: rgb(11, 5, 100);
+			  border: none;
+			  color: white;
+			  padding: 15px 25px;
+			  text-align: center;
+			  font-size: 16px;
+			  cursor: pointer;
+			}
+			
+			.button:hover {
+			  background-color: rgb(19, 36, 192);
+			}
+		</style>
+		<script>
+			$(document).ready(function(){
+
+				$("#calibrate_button").click(function(){
+					$.get('calibrate', function(data, status){
+						console.log(`${data}`)
+					});
+				})
+
+				$("#init_robot").click(function(){
+					$.get('init_robot', function(data, status){
+						console.log(`${data}`)
+					});
+				})
+
+				$("#home_robot").click(function(){
+					$.getJSON( "home_robot", function( data ) {
+						$.each( data, function( result, point ) {
+							$.each( point, function( key, val ) {
+								moveRobot(val.link_1, val.link_2, val.link_3, val.link_4, val.link_5, val.link_6)
+							});
+						});
+					});
+				})
+
+				$("#move_robot").click(function(){
+					$.getJSON( "move_robot", {x: $('#x_val').val(), y: $('#y_val').val(), z: $('#z_val').val()}, function( data ) {
+						$.each( data, function( result, point ) {
+							$.each( point, function( key, val ) {
+								moveRobot(val.link_1, val.link_2, val.link_3, val.link_4, val.link_5, val.link_6)
+							});
+						});
+					});
+				})
+
+				$("#measure_article").click(function(){
+					var name = $('#article_name').val();
+					$.getJSON( "article", 'filename=' + name, function( data ) {
+						$.each( data, function( result, point ) {
+							$.each( point, function( key, val ) {
+								addCube(val.x, val.z, -val.y, 1.0, 0.0, 0.0)
+							});
+						});
+					});
+				})
+
+				$("#measure_box").click(function(){
+					$.getJSON( "box", function( data ) {
+						$.each( data, function( result, point ) {
+							$.each( point, function( key, val ) {
+								addCube(val.x, val.z, -val.y, 1.0, 0.0, 0.0)
+							});
+						});
+					});
+				})
+
+				$("#load_pointcloud").click(function(){
+					var name = $('#article_name').val();
+					$.get('load_pointcloud', 'filename=' + name, function(data, status){
+						console.log(`${data}`)
+					});
+				})
+
+				$("#save_pointcloud").click(function(){
+					var name = $('#article_name').val();
+					$.get('save_pointcloud', 'filename=' + name, function(data, status){
+						console.log(`${data}`)
+					});
+				})
+
+				$("#get_pointcloud").click(function(){
+					$.getJSON( "pointcloud", function( data ) {
+						$.each( data, function( result, point ) {
+							$.each( point, function( key, val ) {
+								// addCube(-val.x, val.y, 1.2-val.z, val.r/255.0, val.g/255.0, val.b/255.0)
+								addCube(val.x, val.z, -val.y, val.r/255.0, val.g/255.0, val.b/255.0)
+							});
+						});
+					});
+				})
+
+				$("#get_robot").click(function(){
+					addRobot();
+				})
+
+				$("#find_article").click(function(){
+					var name = $('#article_name').val();
+					$.getJSON( "picking_points", {id: name}, function( data ) {
+						$.each( data, function( result, point ) {
+							$.each( point, function( key, val ) {
+								addLargeCube(val.x, val.z, -val.y, 0.0, 1.0, 0.0)
+							});
+						});
+					});
+				})
+
+				$("#pick").click(function(){
+
+					$.getJSON( "picking_up", function( data ) {
+						$.each( data, function( result, point ) {
+							$.each( point, function( key, val ) {
+								moveRobot(val.link_1, val.link_2, val.link_3, val.link_4, val.link_5, val.link_6)
+							});
+						});
+					});
+
+				})
+
+
+				$("#pick_all").click(function(){
+					var name = $('#article_name').val();
+					$.getJSON( "picking_all", {id: name}, function( data ) {
+						$.each( data, function( result, point ) {
+							$.each( point, function( key, val ) {
+								moveRobot(val.link_1, val.link_2, val.link_3, val.link_4, val.link_5, val.link_6)
+							});
+						});
+					});
+				})
+
+
+			})
+		</script>
+		
+
+	</head>
+	<body>
+
+
+		<div class="frame">
+
+			<div id="viewer"> 
+			 <canvas id="mycanvas"></canvas>
+		   </div>
+			 <div id="editor">
+
+
+				<div class="mobile-container">
+
+					<!-- Top Navigation Menu -->
+					<div class="topnav">
+					  <a href="#home" class="active">Robot interface</a>
+					  <div id="myLinks">
+						<a href="#picking">Picking</a>
+						<a href="#camera">Camera</a>
+						<a href="#robot">Robot</a>
+						<a href="#robot">Config</a>
+					  </div>
+					  <a href="javascript:void(0);" class="icon" onclick="myFunction()">
+						<i class="fa fa-bars"></i>
+					  </a>
+					</div>
+					
+					<div style="padding-left:16px">
+					  <p></p>On the left is a 3D view of the work area in front of the robot. This area will contain the controls for the different robot tasks.</p>
+					  <hr>
+					  <br>
+					  Article nr: <input type="text" id="article_name"><br>
+					  <br>
+					  <hr>
+					  <br>
+					  <h2>Point cloud</h2>
+					  <button id="get_pointcloud" class="button">View Point cloud</button>
+					  <button id="load_pointcloud" class="button">Load Point cloud</button>
+					  <button id="save_pointcloud" class="button">Save Point cloud</button>
+					  <br>
+					  <hr>
+					  <br>
+					  <h2>Measure</h2>
+					  <br>
+					  <button id="measure_article" class="button">Measure article</button>
+					  <button id="measure_box" class="button">Measure box</button>
+					  <button id="calibrate_button" class="button">Measure table</button>
+					  <br>
+					  <hr>
+					  <br>
+					  <h2>Manipulate</h2>
+					  <br>
+					  <button id="init_robot" class="button">Init robot</button>
+					  <button id="home_robot" class="button">Home robot</button>
+					  <button id="find_article" class="button">Get picking point</button>
+					  <button id="pick" class="button">Pick</button>
+					  <button id="pick_all" class="button">Pick all</button>
+					  <button id="get_robot" class="button">View robot</button>
+					  <br>
+					  <br>
+					  <button id="move_robot" class="button">Move robot</button> X: <input type="text" id="x_val" size="5"> Y: <input type="text" id="y_val" size="5"> Z: <input type="text" id="z_val" size="5"><br>
+					  <br>
+					  <hr>
+	  
+
+					</div>
+					
+					<!-- End smartphone / tablet look -->
+				</div>
+
+				<script>
+					function myFunction() {
+					  var x = document.getElementById("myLinks");
+					  if (x.style.display === "block") {
+						x.style.display = "none";
+					  } else {
+						x.style.display = "block";
+					  }
+					}
+				</script>
+
+			</div>
+		   </div>
+		   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js"></script>
+		   <script src="https://cdn.rawgit.com/mrdoob/three.js/dev/examples/js/controls/OrbitControls.js"></script>
+		   <script src="http://localhost:5000/archive/ColladaLoader.js"></script>
+		   
+		   <script>
+		   
+		   const  renderer = new THREE.WebGLRenderer({canvas: document.getElementById("mycanvas")});
+		   
+		   const scene = new THREE.Scene();
+		   const camera = new THREE.PerspectiveCamera(70, 1.3, 1, 1000);
+		   
+		   
+		   var geometry = new THREE.BoxGeometry( 0.01, 0.01, 0.01);
+		   var material = new THREE.MeshStandardMaterial( { color: 0xff0051 })
+		   var cube = new THREE.Mesh ( geometry, material );
+		   
+		   scene.add(cube);
+		   camera.position.z = 2; 
+		   camera.lookAt (new THREE.Vector3(0,0,0));
+		   
+		   var ambientLight = new THREE.AmbientLight ( 0xffffff, 0.5);
+		   scene.add( ambientLight );
+		   
+		   var pointLight = new THREE.PointLight( 0xffffff, 1 );
+		   pointLight.position.set( 25, 25, 25 );
+		   scene.add( pointLight );
+		   
+		   var controls = new THREE.OrbitControls (camera, renderer.domElement);
+		   
+		   function addCube(x, y, z, r, g, b){
+				var geometry = new THREE.BoxGeometry( 0.01, 0.01, 0.01);
+				var material = new THREE.MeshStandardMaterial( { color: 0xff0051 })
+				var cube = new THREE.Mesh ( geometry, material );
+				cube.position.set( x, y, z );
+				cube.material.color=new THREE.Color( r, g, b );
+				scene.add(cube);
+		   }
+
+		   function addLargeCube(x, y, z, r, g, b){
+				var geometry = new THREE.BoxGeometry( 0.04, 0.07, 0.04);
+				var material = new THREE.MeshStandardMaterial( { color: 0xff0051 })
+				var cube = new THREE.Mesh ( geometry, material );
+				cube.position.set( x, y, z );
+				cube.material.color=new THREE.Color( r, g, b );
+				scene.add(cube);
+		   }
+
+		   function addRobot(){
+				
+		   		// loading manager
+				var loadingManager = new THREE.LoadingManager( function () {
+					scene.add( base_link );
+					scene.add( link_1);
+					
+					//link_2.position.set(0.1, 0.615, 0.0);
+					link_1.add( link_2);
+					link_2.rotation.x = 0;
+					link_2.rotation.y = 0;
+					link_2.rotation.z = 0;
+					link_2.position.set(0.1, 0.0, 0.615);
+
+					//link_3.position.set(0.1, 0.615+0.705, 0 );
+					link_2.add( link_3);
+					link_3.rotation.x = 0;
+					link_3.rotation.y = 0;
+					link_3.rotation.z = 0;
+					link_3.position.set(0.0, 0, 0.705 );
+					
+					//link_4.position.set(0.1+0.258, 0.615+0.705+0.135, 0 ); 
+					link_3.add( link_4);
+					link_4.rotation.x = 0;
+					link_4.rotation.y = 0;
+					link_4.rotation.z = 0;
+					link_4.position.set(0.258, 0.0 , 0.135 ); 
+
+					//link_5.position.set(0.1+0.258+0.497, 0.615+0.705+0.135, 0 ); 
+					link_4.add( link_5);
+					link_5.rotation.x = 0;
+					link_5.rotation.y = 0;
+					link_5.rotation.z = 0;
+					link_5.position.set(0.497, 0.0, 0.0 ); 
+
+					//link_6.position.set(0.1+0.258+0.497+0.085, 0.615+0.705+0.135, 0 ); 
+					link_5.add( link_6);
+					link_6.rotation.x = 0;
+					link_6.rotation.y = 0;
+					link_6.rotation.z = 0;
+					link_6.position.set(0.085, 0.0, 0.0 ); 
+
+				} );
+				// collada
+				var loader = new THREE.ColladaLoader( loadingManager );
+				loader.load( './archive/base_link.dae', function ( collada ) {
+					base_link = collada.scene;
+					base_link.name = 'base_link'
+				} );
+
+				loader.load( './archive/link_1.dae', function ( collada ) {
+					link_1 = collada.scene;
+					link_1.name = "link_1";
+				} );
+
+				loader.load( './archive/link_2.dae', function ( collada ) {
+					link_2 = collada.scene;
+					link_2.name = "link_2";
+				} );
+
+				loader.load( './archive/link_3.dae', function ( collada ) {
+					link_3 = collada.scene;
+					link_3.name = "link_3";
+				} );
+
+				loader.load( './archive/link_4.dae', function ( collada ) {
+				 	link_4 = collada.scene;
+					link_4.name = "link_4";
+				} );
+
+				loader.load( './archive/link_5.dae', function ( collada ) {
+					link_5 = collada.scene;
+					link_5.name = "link_5";
+				} );
+
+				loader.load( './archive/link_6.dae', function ( collada ) {
+					link_6 = collada.scene;
+					link_6.name = "link_6";
+				} );
+
+
+			}
+
+		   function moveRobot(rot1, rot2, rot3, rot4, rot5, rot6) {
+				console.log('moving robot model');
+				
+				var myobject = scene.getObjectByName( "link_1", true );
+				myobject.rotation.z = rot1;
+
+				myobject = scene.getObjectByName( "link_2", true );
+				myobject.rotation.y = rot2;
+				
+				myobject = scene.getObjectByName( "link_3", true );
+				myobject.rotation.y = rot3-rot2;
+
+				myobject = scene.getObjectByName( "link_4", true );
+				myobject.rotation.y = rot4;
+
+				myobject = scene.getObjectByName( "link_5", true );
+				myobject.rotation.y = rot5;
+
+				myobject = scene.getObjectByName( "link_6", true );
+				myobject.rotation.x = rot6;
+		   }
+		   
+		   function resizeCanvasToDisplaySize() {
+			 const canvas = renderer.domElement;
+			 const width = canvas.clientWidth;
+			 const height = canvas.clientHeight;
+			 if (canvas.width !== width || canvas.height !== height) {
+			   // you must pass false here or three.js sadly fights the browser
+			   renderer.setSize(width, height, false);
+			   camera.aspect = width / height;
+			   camera.updateProjectionMatrix();
+		   
+			   // set render target sizes here
+			 }
+		   }
+				  
+		   function render() {
+			   resizeCanvasToDisplaySize();
+			   controls.update();
+			   renderer.render(scene, camera);
+			   requestAnimationFrame(render);
+		   };
+		   
+		   render();
+		   
+		   
+		   </script>
+
+	</body>
+</html>

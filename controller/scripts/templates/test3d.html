@@ -1,0 +1,106 @@
+<html>
+<head>
+<title>Bluebottle robot app</title>
+
+<style>
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+body { margin: 0; }
+.outer {
+}
+.frame { 
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+.frame>* {
+  flex: 1 1 50%;
+}
+#editor {
+  font-family: monospace;
+  padding: .5em;
+  background: #444;
+  color: white;
+}
+canvas { 
+  width: 100%;
+  height: 100%;
+}
+</style>
+
+</head>
+<body>
+
+<div class="frame">
+
+ <div id="viewer"> 
+  <canvas id="mycanvas"></canvas>
+</div>
+  <div id="editor">
+  On the left is a 3D view of the work area in front of the robot. This area will contain the controls for the different robot tasks.
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js"></script>
+<script src="https://cdn.rawgit.com/mrdoob/three.js/dev/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+
+const  renderer = new THREE.WebGLRenderer({canvas: document.getElementById("mycanvas")});
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, 2, 1, 1000);
+
+
+var geometry = new THREE.BoxGeometry( 1, 1, 1);
+var material = new THREE.MeshStandardMaterial( { color: 0xff0051 })
+var cube = new THREE.Mesh ( geometry, material );
+
+scene.add(cube);
+camera.position.z = 5; 
+camera.lookAt (new THREE.Vector3(0,0,0));
+
+var ambientLight = new THREE.AmbientLight ( 0xffffff, 0.5);
+scene.add( ambientLight );
+
+var pointLight = new THREE.PointLight( 0xffffff, 1 );
+pointLight.position.set( 25, 50, 25 );
+scene.add( pointLight );
+
+var controls = new THREE.OrbitControls (camera, renderer.domElement);
+
+
+function resizeCanvasToDisplaySize() {
+  const canvas = renderer.domElement;
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  if (canvas.width !== width || canvas.height !== height) {
+    // you must pass false here or three.js sadly fights the browser
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+
+    // set render target sizes here
+  }
+}
+       
+function render() {
+	resizeCanvasToDisplaySize();
+	controls.update();
+	renderer.render(scene, camera);
+	requestAnimationFrame(render);
+};
+
+render();
+
+
+</script>
+
+
+
+</body>
+</html>
+
